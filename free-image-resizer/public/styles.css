@@ -574,11 +574,43 @@ input[type="range"] {
   }
 }
 
-/* Reserved space for a future ad (see comment in index.html). */
+/* Small ad boxes (see ads.js): 320×50 on phones, 468×60 on wider screens. */
 .ad-slot {
-  max-width: 728px;
-  min-height: 100px;
-  margin: 40px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 32px auto 0;
+}
+
+.ad-slot-bottom {
+  margin: 0 auto 40px;
+}
+
+.ad-label {
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ad-unit {
+  display: inline-block;
+  width: 320px;
+  max-width: 100%;
+  height: 50px;
+}
+
+@media (min-width: 600px) {
+  .ad-unit {
+    width: 468px;
+    height: 60px;
+  }
+}
+
+/* No ad to show: hide the box instead of leaving a gap. */
+.ad-slot:has(ins[data-ad-status="unfilled"]) {
+  display: none;
 }
 
 /* Help text */
@@ -628,6 +660,10 @@ input[type="range"] {
 
 .site-footer p {
   margin: 0;
+}
+
+.site-footer a {
+  color: var(--muted);
 }
 
 @media (max-width: 480px) {

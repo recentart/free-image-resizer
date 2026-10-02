@@ -2,7 +2,8 @@
 
 A small static web app that resizes JPG, PNG and WebP images and lets you download the result.
 Everything happens **locally in the browser**: the image is never uploaded, and there is no
-backend, database, account system, analytics or third-party script.
+backend, database, account system or analytics. The only third-party code is Google AdSense for
+two small ad boxes (see [Ads](#ads)).
 
 ## What it does
 
@@ -23,10 +24,11 @@ backend, database, account system, analytics or third-party script.
 
 - The browser decodes the file, `<canvas>` resizes it, and `canvas.toBlob()` encodes it. The
   download is a local `blob:` URL.
-- The page's Content-Security-Policy (a `<meta>` tag in `index.html`) sets `connect-src 'none'`,
-  so the page's scripts *cannot* send data over the network (no `fetch`, XHR, WebSocket or
-  beacon). The test suite checks this.
-- No external fonts, scripts, analytics or trackers are loaded.
+- The page's Content-Security-Policy (a `<meta>` tag in `index.html`) leaves `'self'` out of
+  `connect-src`, so the page *cannot* send anything to this site's server. Its only allowed
+  connections are Google's ad domains, which AdSense needs. The test suite checks this.
+- No analytics or trackers of our own are loaded. `public/privacy.html` is the privacy page,
+  including the cookie disclosure that AdSense requires.
 
 ## Supported formats
 
@@ -95,9 +97,9 @@ Connect to Git*. Set:
 npx wrangler pages deploy public --project-name free-image-resizer
 ```
 
-**Before going live**, replace `https://free-image-resizer.pages.dev/` with your real domain in
-`public/index.html` (canonical, `og:url` and JSON-LD), `public/robots.txt` and
-`public/sitemap.xml`.
+The live address is `https://free-image-resizer.freewebtoolss.workers.dev/`. If you move to a
+custom domain, update it in `public/index.html` (canonical, `og:url` and JSON-LD),
+`public/privacy.html`, `public/robots.txt` and `public/sitemap.xml`.
 
 `public/_headers` adds security headers on Cloudflare Pages. `public/404.html` stops Pages from
 serving the home page for every unknown URL.
@@ -109,6 +111,8 @@ public/                 ← deployed site (Cloudflare Pages output directory)
   index.html            page markup, SEO meta tags, CSP, help/FAQ text
   styles.css            all styles (no framework)
   app.js                all behaviour: loading, validation, resizing, download
+  ads.js                AdSense IDs and loader for the two small ad boxes
+  privacy.html          privacy page (images stay local; AdSense cookie disclosure)
   404.html              not-found page
   _headers              Cloudflare Pages security headers
   robots.txt, sitemap.xml
@@ -136,9 +140,16 @@ There are no npm packages, frameworks, build tools, CDNs or environment variable
 - **Very large images** are resized on the main thread, so the page can pause briefly (about 1 s
   for a 24 MP photo on a desktop).
 
-## Adding ads later
+## Ads
 
-`index.html` marks the ad position between the tool and the help text, and `.ad-slot` in
-`styles.css` reserves its height to prevent layout shift. When you add an ad network, update the
-CSP `<meta>` tag to allow its script and connection domains. Note that third-party scripts can
-read the page, so review the privacy statement at the same time.
+There are two small Google AdSense boxes: one between the tool and the help text, and one at the
+bottom above the footer. They are 468×60 on wider screens and 320×50 on phones, labelled
+"Advertisement", and never inside the upload/resize/download steps.
+
+- **Switch them on:** in `public/ads.js`, set `client` (your `ca-pub-…` publisher ID) and `slot`
+  (a display ad unit ID from *AdSense → Ads → By ad unit*). Then add `public/ads.txt` containing
+  `google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0`, using your publisher number.
+- Until both IDs are set, the boxes stay hidden and no ad code loads.
+- A box hides itself if an ad blocker stops AdSense or if Google has no ad to show.
+- For visitors in the EEA, UK and Switzerland, turn on Google's consent message in *AdSense →
+  Privacy & messaging*. No code change is needed.

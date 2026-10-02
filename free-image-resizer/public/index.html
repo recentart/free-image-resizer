@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- connect-src 'none' stops this page's scripts from sending anything over the network. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <!-- connect-src has no 'self', so the page can never send anything to this site's server.
+       The Google domains are only for the small AdSense boxes (see ads.js). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://*.googlesyndication.com https://*.googleadservices.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.adtrafficquality.google; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; font-src https://fonts.gstatic.com; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google; connect-src https://*.googlesyndication.com https://*.googleadservices.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.adtrafficquality.google; form-action 'none'; base-uri 'none'; object-src 'none'">
   <title>Free Image Resizer – Resize JPG, PNG &amp; WebP Online</title>
   <meta name="description" content="Resize JPG, PNG and WebP images online for free. Set an exact width, height or percentage, keep the aspect ratio and download instantly. Your image never leaves your browser.">
-  <link rel="canonical" href="https://free-image-resizer.pages.dev/">
+  <link rel="canonical" href="https://free-image-resizer.freewebtoolss.workers.dev/">
   <meta name="theme-color" content="#1d5bd6">
   <link rel="icon" href="favicon.ico" sizes="32x32">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -15,16 +16,17 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Free Image Resizer – Resize JPG, PNG &amp; WebP Online">
   <meta property="og:description" content="Resize images to an exact width, height or percentage. Free, no sign-up, and your image never leaves your browser.">
-  <meta property="og:url" content="https://free-image-resizer.pages.dev/">
+  <meta property="og:url" content="https://free-image-resizer.freewebtoolss.workers.dev/">
   <meta name="twitter:card" content="summary">
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
+  <script src="ads.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Free Image Resizer",
-    "url": "https://free-image-resizer.pages.dev/",
+    "url": "https://free-image-resizer.freewebtoolss.workers.dev/",
     "description": "Resize JPG, PNG and WebP images in your browser by width, height or percentage.",
     "applicationCategory": "MultimediaApplication",
     "operatingSystem": "Any",
@@ -172,12 +174,11 @@
         </div>
       </div>
 
-      <!--
-        Future ad placement: insert <aside class="ad-slot" aria-label="Advertisement">…</aside>
-        here, between the tool and the help text. .ad-slot in styles.css reserves its height so
-        the page doesn't jump when the ad loads. Remember to update the Content-Security-Policy
-        above to allow the ad network's scripts.
-      -->
+      <!-- Small ad boxes: hidden until AdSense IDs are set in ads.js. Never inside the tool. -->
+      <aside class="ad-slot" aria-label="Advertisement" hidden>
+        <span class="ad-label">Advertisement</span>
+        <ins class="adsbygoogle ad-unit"></ins>
+      </aside>
 
       <section class="info" aria-labelledby="how-title">
         <h2 id="how-title">How to resize an image</h2>
@@ -190,7 +191,7 @@
 
         <h2>Questions</h2>
         <h3>Is my image uploaded?</h3>
-        <p>No. Your browser resizes the image with its built-in canvas feature. This site has no image-processing server, and the page's security policy blocks its scripts from sending data anywhere.</p>
+        <p>No. Your browser resizes the image with its built-in canvas feature. This site has no image-processing server, and the page's security policy stops it from sending anything to our server. The small ads on the page come from Google AdSense, and your image isn't sent to them either.</p>
         <h3>Is it free?</h3>
         <p>Yes. There's no sign-up, no watermark and no limit on how many images you resize.</p>
         <h3>Which formats are supported?</h3>
@@ -204,12 +205,17 @@
         <h3>Is there a size limit?</h3>
         <p>Images can be up to 100 MB and 100 megapixels, and the result can be up to 16,384 pixels on each side. Phones and older computers can run out of memory with very large images. If that happens, try smaller dimensions.</p>
       </section>
+
+      <aside class="ad-slot ad-slot-bottom" aria-label="Advertisement" hidden>
+        <span class="ad-label">Advertisement</span>
+        <ins class="adsbygoogle ad-unit"></ins>
+      </aside>
     </div>
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      <p>Free Image Resizer · Images are processed on your device and never uploaded.</p>
+      <p>Free Image Resizer · Images are processed on your device and never uploaded. · <a href="privacy.html">Privacy</a></p>
     </div>
   </footer>
 
