@@ -2,8 +2,8 @@
 
 A small static web app that resizes JPG, PNG and WebP images and lets you download the result.
 Everything happens **locally in the browser**: the image is never uploaded, and there is no
-backend, database, account system or analytics. The only third-party code is Google AdSense for
-two small ad boxes (see [Ads](#ads)).
+backend, database, account system or analytics. The only third-party code is Adsterra banners,
+which run in sandboxed frames apart from the page (see [Ads](#ads)).
 
 ## What it does
 
@@ -24,11 +24,13 @@ two small ad boxes (see [Ads](#ads)).
 
 - The browser decodes the file, `<canvas>` resizes it, and `canvas.toBlob()` encodes it. The
   download is a local `blob:` URL.
-- The page's Content-Security-Policy (a `<meta>` tag in `index.html`) leaves `'self'` out of
-  `connect-src`, so the page *cannot* send anything to this site's server. Its only allowed
-  connections are Google's ad domains, which AdSense needs. The test suite checks this.
+- The page's Content-Security-Policy (a `<meta>` tag in `index.html`) sets `connect-src 'none'`,
+  so the page's scripts *cannot* send data over the network (no `fetch`, XHR, WebSocket or
+  beacon). The test suite checks this.
+- Ads never run in the page itself. Each one loads in a sandboxed `ad/` frame with an opaque
+  origin, so ad code can't read the page, the image or the download.
 - No analytics or trackers of our own are loaded. `public/privacy.html` is the privacy page,
-  including the cookie disclosure that AdSense requires.
+  including the Adsterra cookie disclosure.
 
 ## Supported formats
 
@@ -111,8 +113,10 @@ public/                 ← deployed site (Cloudflare Pages output directory)
   index.html            page markup, SEO meta tags, CSP, help/FAQ text
   styles.css            all styles (no framework)
   app.js                all behaviour: loading, validation, resizing, download
-  ads.js                AdSense IDs and loader for the two small ad boxes
-  privacy.html          privacy page (images stay local; AdSense cookie disclosure)
+  ads-config.js         Adsterra banner codes (empty = ads off)
+  ads.js                puts each live banner into a sandboxed ad/ frame
+  ad/                   the ad frame page (one ad per frame)
+  privacy.html          privacy page (images stay local; Adsterra disclosure)
   404.html              not-found page
   _headers              Cloudflare Pages security headers
   robots.txt, sitemap.xml
@@ -142,14 +146,21 @@ There are no npm packages, frameworks, build tools, CDNs or environment variable
 
 ## Ads
 
-There are two small Google AdSense boxes: one between the tool and the help text, and one at the
+There are two small Adsterra banner boxes: one between the tool and the help text, and one at the
 bottom above the footer. They are 468×60 on wider screens and 320×50 on phones, labelled
 "Advertisement", and never inside the upload/resize/download steps.
 
-- **Switch them on:** in `public/ads.js`, set `client` (your `ca-pub-…` publisher ID) and `slot`
-  (a display ad unit ID from *AdSense → Ads → By ad unit*). Then add `public/ads.txt` containing
-  `google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0`, using your publisher number.
-- Until both IDs are set, the boxes stay hidden and no ad code loads.
-- A box hides itself if an ad blocker stops AdSense or if Google has no ad to show.
-- For visitors in the EEA, UK and Switzerland, turn on Google's consent message in *AdSense →
-  Privacy & messaging*. No code change is needed.
+**To switch them on:**
+
+1. Sign up as a publisher at adsterra.com and add the site's address.
+2. Create two **Banner** ad units, one 468×60 and one 320×50.
+3. From each unit's code, copy the `src` of the `invoke.js` script, for example
+   `//www.highperformanceformat.com/0123…cdef/invoke.js`, into the matching size in
+   `public/ads-config.js`. Then redeploy.
+
+- Until a size has a code, the boxes stay hidden and no ad code loads.
+- Both boxes use the same two units.
+- Only plain banner units are supported, not pop-unders or the "social bar".
+- Each ad loads `public/ad/?unit=<size>` in an iframe sandboxed without `allow-same-origin`. One ad
+  per frame is needed because Adsterra's snippet uses a page-wide `atOptions` variable.
+- `public/_headers` gives `/ad/*` its own policy so the frame can load Adsterra's scripts.

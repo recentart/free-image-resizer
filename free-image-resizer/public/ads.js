@@ -1,36 +1,43 @@
 /*
- * Google AdSense for the two small ad boxes in index.html.
+ * Small Adsterra banner boxes (codes live in ads-config.js).
  *
- * Fill in both IDs to switch the ads on. While either is empty, the boxes stay
- * hidden and no ad code is loaded. Also put your publisher ID in ads.txt.
+ * Each live ad runs in its own sandboxed frame (ad/index.html) with an opaque origin, so ad code
+ * can't reach this page, the image being resized or the download. A box stays hidden until a
+ * banner code for its size is set.
  */
 (() => {
   'use strict';
 
-  const ADSENSE = {
-    client: '', // publisher ID, e.g. 'ca-pub-1234567890123456'
-    slot: '', // display ad unit ID (AdSense → Ads → By ad unit), e.g. '1234567890'
-  };
+  const BANNER = /^(?:https?:)?\/\/([a-z0-9.:-]+)\/([a-z0-9]+)\/invoke\.js$/i;
+  const banners = (window.ADS && window.ADS.banners) || {};
+  const isLive = (size) => BANNER.test(banners[size] || '');
 
-  if (!/^ca-pub-\d{10,20}$/.test(ADSENSE.client) || !/^\d{5,20}$/.test(ADSENSE.slot)) return;
-
-  const units = Array.from(document.querySelectorAll('ins.adsbygoogle'));
-  const showBoxes = (show) => {
-    for (const ins of units) ins.closest('.ad-slot').hidden = !show;
-  };
-
-  for (const ins of units) {
-    ins.dataset.adClient = ADSENSE.client;
-    ins.dataset.adSlot = ADSENSE.slot;
+  for (const [size, code] of Object.entries(banners)) {
+    if (code && !isLive(size)) console.error(`ads-config.js: the ${size} entry doesn't look like an Adsterra invoke.js address.`);
   }
-  showBoxes(true);
 
-  const script = document.createElement('script');
-  script.async = true;
-  script.crossOrigin = 'anonymous';
-  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE.client}`;
-  script.onerror = () => showBoxes(false); // blocked by an ad blocker or offline
-  document.head.append(script);
+  const slots = Array.from(document.querySelectorAll('[data-ad-sizes]'));
 
-  for (let i = 0; i < units.length; i++) (window.adsbygoogle = window.adsbygoogle || []).push({});
+  function fill(slot) {
+    if (slot.dataset.adFilled) return;
+    // The slot is hidden until filled, so measure the space around it (minus the 16px gutters).
+    const room = Math.min(slot.parentElement.clientWidth, document.documentElement.clientWidth) - 32;
+    const sizes = slot.dataset.adSizes.split(' ');
+    const size = sizes.find((s) => parseInt(s, 10) <= room) || sizes[sizes.length - 1];
+    if (!isLive(size)) return;
+
+    const [width, height] = size.split('x');
+    const frame = document.createElement('iframe');
+    frame.title = 'Advertisement';
+    frame.width = width;
+    frame.height = height;
+    frame.setAttribute('sandbox', 'allow-scripts allow-popups allow-popups-to-escape-sandbox');
+    frame.src = `ad/?unit=${size}`;
+    slot.querySelector('.ad-box').append(frame);
+    slot.dataset.adFilled = size;
+    slot.hidden = false;
+  }
+
+  slots.forEach(fill);
+  window.addEventListener('resize', () => slots.forEach(fill));
 })();

@@ -206,20 +206,17 @@
 
   // ---------- tests ----------
 
-  const AD_HOST = /^https:\/\/([\w-]+\.)*(googlesyndication\.com|googleadservices\.com|doubleclick\.net|google\.com|gstatic\.com|adtrafficquality\.google)(\/|$)/;
-
-  await test('Privacy: the page cannot send anything to our server', async () => {
+  await test('Privacy: the page cannot make network requests', async () => {
     let blocked = false;
     try {
       await win.fetch('../public/robots.txt');
     } catch (_) {
       blocked = true;
     }
-    assert(blocked, 'fetch() from the app page to the site was not blocked');
+    assert(blocked, 'fetch() from the app page was not blocked');
     const csp = doc.querySelector('meta[http-equiv="Content-Security-Policy"]').content;
-    const connect = (csp.match(/connect-src([^;]*)/) || [, ''])[1].trim().split(/\s+/);
-    const bad = connect.filter((src) => !/^https:\/\/\*\.[\w.-]+$/.test(src) || !AD_HOST.test(src.replace('*.', 'x.')));
-    eq(bad.join(' '), '', 'connect-src sources other than Google ad domains');
+    assert(/connect-src 'none'/.test(csp), 'CSP lacks connect-src none');
+    assert(/frame-src 'self'/.test(csp) && !/https:/.test(csp), 'CSP should allow only same-site frames and no outside hosts');
     assert(text('page-title') === 'Free Image Resizer', 'title');
     assert(/Your image is resized locally in your browser\. Your image is not uploaded to our server\./.test(doc.body.textContent), 'privacy statement');
     return 'fetch() rejected by CSP';
@@ -545,26 +542,20 @@
     return detail;
   });
 
-  await test('Ad boxes: hidden until AdSense IDs are set, small, outside the tool', async () => {
-    const slots = Array.from(doc.querySelectorAll('.ad-slot'));
+  await test('Ad boxes: hidden until Adsterra codes are set, outside the tool', async () => {
+    const slots = Array.from(doc.querySelectorAll('[data-ad-sizes]'));
     eq(slots.length, 2, 'number of ad boxes');
-    assert(slots.every((s) => s.hidden), 'boxes should stay hidden while ads.js has no IDs');
-    assert(!doc.querySelector('script[src*="googlesyndication"]'), 'no AdSense script without IDs');
+    assert(slots.every((s) => s.hidden), 'boxes should stay hidden while ads-config.js is empty');
+    eq(doc.querySelectorAll('.ad-box iframe').length, 0, 'ad frames loaded without codes');
     assert(slots.every((s) => !s.closest('#app')), 'ad boxes must be outside the tool');
+    assert(slots.every((s) => s.dataset.adSizes === '468x60 320x50'), 'banner sizes');
     assert(slots.every((s) => /Advertisement/.test(s.textContent)), 'boxes are labelled');
-    const sizes = slots.map((s) => {
-      s.hidden = false;
-      const r = s.querySelector('ins').getBoundingClientRect();
-      s.hidden = true;
-      return [Math.round(r.width), Math.round(r.height)];
-    });
-    assert(sizes.every(([w, h]) => w <= 468 && h <= 60), `boxes too big: ${JSON.stringify(sizes)}`);
-    return `2 boxes, ${sizes.map((s) => s.join('×')).join(' and ')} px at ${doc.documentElement.clientWidth} px wide`;
+    return '2 hidden boxes, no ad frames';
   });
 
-  await test('Only the page’s own files (and Google ad domains) were requested', async () => {
+  await test('Only the page’s own static files were requested', async () => {
     const names = win.performance.getEntriesByType('resource').map((e) => e.name);
-    const outside = names.filter((n) => !n.startsWith(`${location.origin}/public/`) && !n.startsWith('blob:') && !AD_HOST.test(n));
+    const outside = names.filter((n) => !n.startsWith(`${location.origin}/public/`) && !n.startsWith('blob:'));
     eq(outside.length, 0, `requests outside the site (${outside.join(', ')})`);
     return names.map((n) => n.replace(`${location.origin}/public/`, '')).join(', ');
   });

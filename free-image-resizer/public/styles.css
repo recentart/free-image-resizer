@@ -574,7 +574,7 @@ input[type="range"] {
   }
 }
 
-/* Small ad boxes (see ads.js): 320×50 on phones, 468×60 on wider screens. */
+/* Small Adsterra banners (see ads.js): 468×60, or 320×50 on phones. The frame sets the size. */
 .ad-slot {
   display: flex;
   flex-direction: column;
@@ -588,29 +588,21 @@ input[type="range"] {
 }
 
 .ad-label {
+  margin: 0;
   color: var(--muted);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.ad-unit {
-  display: inline-block;
-  width: 320px;
+.ad-box {
   max-width: 100%;
-  height: 50px;
+  overflow: hidden;
 }
 
-@media (min-width: 600px) {
-  .ad-unit {
-    width: 468px;
-    height: 60px;
-  }
-}
-
-/* No ad to show: hide the box instead of leaving a gap. */
-.ad-slot:has(ins[data-ad-status="unfilled"]) {
-  display: none;
+.ad-box iframe {
+  display: block;
+  border: 0;
 }
 
 /* Help text */
